@@ -1,0 +1,34 @@
+# Execucao via container Node + Playwright (sem instalar Node no host).
+# A imagem oficial do Playwright ja traz Node, os browsers e as deps de sistema.
+#
+# Uso (todo o repo e mapeado em /work):
+#   docker compose run --rm pw npm install
+#   docker compose run --rm pw npm run auth
+#   docker compose run --rm pw npm test
+#   docker compose run --rm pw npm run scrape
+#   docker compose run --rm pw npm run report -- --host 0.0.0.0   # abre em http://localhost:9323
+#
+# Atalho no Windows: .\pw.ps1 npm test   (ver pw.ps1)
+
+services:
+  pw:
+    # IMPORTANTE: mantenha esta versao IGUAL a "@playwright/test" do package.json,
+    # senao os browsers da imagem nao batem com a lib instalada ("browser not found").
+    image: mcr.microsoft.com/playwright:v1.60.0-noble
+    working_dir: /work
+    init: true
+    # Recomendado pela Playwright para evitar crashes do Chromium.
+    ipc: host
+    volumes:
+      # Mapeia TODO o repo para /work (codigo, .env, saidas geradas).
+      - .:/work
+    env_file:
+      - .env
+    # Permite que o container alcance a app rodando no host (Linux/Win/Mac).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Porta do relatorio HTML (npm run report -- --host 0.0.0.0).
+    ports:
+      - "9323:9323"
+    # Comando default ao usar `docker compose up`; sobrescrito por `run --rm pw <cmd>`.
+    command: ["npm", "test"]
