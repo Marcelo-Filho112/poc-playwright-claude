@@ -40,10 +40,52 @@ falhas, mantendo sessao autenticada e fazendo scraping.
 
 ## Loop de QA (importante)
 Ao pedir para rodar/consertar testes, siga o loop:
-1. Rode os testes em `tests/` (`npm test`).
-2. Se algo falhar, **investigue a causa real** (abra o trace/report, ou dirija o browser via
-   `playwright-cli` para inspecionar o estado real da pagina).
+1. Rode os testes (`npm test`, ou `npm test -- --project=public` para os sem login).
+2. Se algo falhar, **investigue a causa real** (abra o trace/report, ou re-explore a pagina
+   com `npm run explore -- <url>` para inspecionar o estado real).
 3. Corrija o teste ou o locator com base no que observou — sem chutar.
 4. Re-rode ate ficar verde.
 
-Prompts prontos para cada funcionalidade: ver `docs/prompts.md`.
+---
+
+# Atividades (consolidado)
+
+O objetivo e **genérico**: dada qualquer pagina, explorar o que ela tem e gerar testes que
+cobrem as funcionalidades presentes. Fluxo padrao para qualquer alvo:
+
+1. **Explorar** — `npm run explore -- <url>`. Gera em `output/`:
+   `explore_<slug>.json` (inventario: textos, botoes, links, inputs, tabelas, graficos),
+   `explore_<slug>.aria.yaml` (arvore role+name) e um screenshot em `screenshots/`.
+2. **Observar** — ler esses arquivos. Os nomes acessiveis viram locators `getByRole(...)`.
+3. **Gerar** — escrever o spec cobrindo cada categoria encontrada (tabela abaixo).
+   - App propria/com login → `tests/` (herda a sessao autenticada).
+   - Site publico/sem login → `tests/public/` (projeto `public`).
+4. **Rodar e corrigir** — seguir o Loop de QA ate ficar verde.
+
+## O que testar por categoria de funcionalidade
+Cubra apenas o que a pagina realmente tem (o inventario diz o que existe):
+
+| Funcionalidade | Como localizar | O que asserir |
+|---|---|---|
+| **Textos / titulos** | `getByRole('heading', { name })`, `getByText(...)` | conteudo esperado visivel: `toBeVisible()`, `toContainText(...)` |
+| **Botoes** | `getByRole('button', { name })` | visivel/habilitado; ao clicar, muda estado/abre algo: `toBeEnabled()`, efeito pos-clique |
+| **Links / navegacao** | `getByRole('link', { name })` | visivel; ao clicar, navega: `await expect(page).toHaveURL(...)` |
+| **Tabelas** | `getByRole('table')`, `getByRole('row')`, `getByRole('cell', { name })` | cabecalhos presentes; nº de linhas (`toHaveCount`); celula com valor esperado |
+| **Graficos** | `locator('svg')`, `locator('canvas')`, `getByRole('img', { name })` | renderizado/visivel: `toBeVisible()`; legenda/aria-label esperada |
+| **Entradas → respostas** | `getByRole('textbox'/'searchbox'/'combobox'/'checkbox')`, `getByLabel(...)` | preencher/selecionar e validar a **resposta**: URL muda, resultado aparece, mensagem de validacao, valor refletido (`toHaveValue`), contagem de resultados |
+
+Regra de ouro do "entradas → respostas": toda entrada deve ter uma assercao do **efeito**
+(o que a pagina respondeu), nao so o preenchimento. Ex.: buscar um termo e verificar que a
+lista de resultados aparece e a URL passa a conter o termo.
+
+## Prompts prontos (genericos)
+- **Explorar + gerar:** "Explore <url> e crie casos de teste cobrindo as funcionalidades da
+  pagina: textos, botoes, tabelas, graficos e as respostas quando ha entradas (busca, filtros,
+  formularios)."
+- **Foco numa funcionalidade:** "Na pagina <url>, gere testes para a tabela X: cabecalhos,
+  nº de linhas e que a celula Y mostra o valor esperado."
+- **Entrada/resposta:** "Preencha o campo <campo> com <valor>, submeta e verifique a resposta
+  (resultado/validacao/URL)."
+- **Loop de QA:** "Rode os testes; se falhar, investigue (trace/report ou re-explore), corrija
+  o locator/assert e re-rode ate passar. Nao invente locators."
+- **Sessao autenticada:** "Garanta a sessao com `npm run auth`, depois teste o fluxo logado."

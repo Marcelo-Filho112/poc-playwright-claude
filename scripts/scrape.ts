@@ -7,7 +7,7 @@ import 'dotenv/config';
  * Exemplo de scraping / automacao de browser (molde).
  *
  * Navega ate BASE_URL, extrai uma lista de itens (titulo + URL) e grava em
- * output/items.json. Reutilize/adapte via prompt (veja docs/prompts.md).
+ * output/items.json. Reutilize/adapte via prompt (veja CLAUDE.md > Atividades).
  *
  * Rodar:  npm run scrape
  *

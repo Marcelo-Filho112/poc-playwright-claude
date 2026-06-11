@@ -52,13 +52,28 @@ npm run scrape   # extrai dados para output/items.json
 > Modo headed (`--headed`) e `test:ui` precisam de display grafico — rode no host.
 > No container, mantenha headless (`npm test`, `npm run scrape`).
 
+## Explorar uma pagina e gerar testes
+
+Fluxo generico (detalhado em `CLAUDE.md` > Atividades): explorar a pagina, observar o que
+ela tem e gerar testes para cada funcionalidade (textos, botoes, tabelas, graficos, e as
+respostas quando ha entradas).
+
+```powershell
+.\pw.ps1 npm run explore -- https://exemplo.com   # inventaria a pagina em output/ + screenshot
+.\pw.ps1 npm test -- --project=public             # roda os testes sem login (tests/public/)
+```
+
+Na pratica, basta pedir: *"Explore <url> e crie casos de teste cobrindo tabelas, graficos,
+botoes, textos e as respostas a entradas"* — o agente roda o `explore`, le o inventario e
+escreve os specs grounded no que existe.
+
 ## Estrutura
-- `playwright.config.ts` — baseURL por env, projeto `setup` (auth) + `chromium` (testes).
+- `playwright.config.ts` — baseURL por env; projetos `setup` (auth), `chromium` (com login), `public` (sem login).
 - `auth/auth.setup.ts` — login + storageState.
-- `tests/` — specs (moldes: smoke e autenticado).
+- `tests/` — specs com login; `tests/public/` — specs sem login.
+- `scripts/explore.ts` — inventaria funcionalidades de uma pagina (textos, botoes, tabelas, graficos, inputs).
 - `scripts/scrape.ts` — exemplo de scraping.
-- `CLAUDE.md` — convencoes que o agente usa (locators, loop de QA, onde salvar saidas).
-- `docs/prompts.md` — prompts prontos para cada workflow.
+- `CLAUDE.md` — convencoes + Atividades (como explorar e testar cada funcionalidade).
 
 > A app-alvo e local (`BASE_URL`, default `http://localhost:3000`). Para um demo publico,
 > troque so o `BASE_URL`. Ajuste rotas/locators dos exemplos para a sua app.
