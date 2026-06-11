@@ -111,6 +111,7 @@ async function main() {
   await writeFile(path.join(outDir, `explore_${slug}.aria.yaml`), aria, 'utf-8');
 
   console.log('=== EXPLORACAO ===');
+  console.log('slug      :', slug);
   console.log('title     :', title);
   console.log('finalUrl  :', finalUrl);
   console.log('headings  :', inventory.texts.headings.slice(0, 6));

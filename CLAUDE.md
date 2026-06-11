@@ -48,10 +48,45 @@ Ao pedir para rodar/consertar testes, siga o loop:
 
 ---
 
+# Fluxo /qa (pipeline de geracao de testes)
+
+As atividades abaixo estao automatizadas como comandos em `.claude/commands/qa/`.
+Use-os em vez de executar as etapas a mao:
+
+| Comando | Argumentos | O que faz |
+|---|---|---|
+| `/qa:plan` | `<url> [--public]` | Explora o URL, versiona `specs/<slug>/{exploration.json, aria.yaml}`, cria `TESTDIR/seed.spec.ts` e gera `specs/<slug>/plan.md` via agente **playwright-test-planner** |
+| `/qa:generate` | `<slug> [cenario\|grupo\|all]` | Fatia o plano em cenarios e gera os specs via agente **playwright-test-generator** (SEQUENCIAL — sessao de browser MCP unica) |
+| `/qa:heal` | `<slug>` | Roda os testes do alvo e conserta ate verde via agente **playwright-test-healer** (Loop de QA) |
+| `/qa:curate` | `<slug>` | Audita cobertura/convencoes/status via agente **playwright-test-curator** → `specs/<slug>/curation.md` |
+| `/qa:pipeline` | `<url> [--public]` | Tudo acima em sequencia |
+
+Artefatos por alvo (todos **versionados** e **editaveis a mao** — os comandos re-consomem):
+
+```
+specs/<slug>/{exploration.json, aria.yaml, plan.md, curation.md}
+tests/<slug>/           # alvo autenticado (projeto chromium, herda .auth/user.json)
+tests/public/<slug>/    # alvo publico (projeto public)
+  └── seed.spec.ts + <cenario>.spec.ts (1 teste por arquivo)
+```
+
+Regras do fluxo:
+- **A pasta do seed decide o projeto**: `tests/public/<slug>/` roda no projeto `public`;
+  `tests/<slug>/` roda no `chromium` (autenticado). Heuristica: host ≠ localhost/BASE_URL
+  → public; em duvida o comando pergunta.
+- O `seed.spec.ts` por slug e o estado inicial de todos os cenarios do alvo (o
+  `seed.spec.ts` da raiz e so um template de referencia — nao casa com nenhum projeto).
+- `plan.md` e `curation.md` podem ser editados pelo humano; `/qa:generate` gera apenas
+  cenarios sem spec, e `/qa:curate` sobrescreve o relatorio por completo (idempotente).
+- `output/` e `screenshots/` sao scratch (gitignored); a copia canonica fica em `specs/<slug>/`.
+
+---
+
 # Atividades (consolidado)
 
 O objetivo e **genérico**: dada qualquer pagina, explorar o que ela tem e gerar testes que
-cobrem as funcionalidades presentes. Fluxo padrao para qualquer alvo:
+cobrem as funcionalidades presentes. O fluxo padrao abaixo e o que os comandos `/qa:*`
+automatizam (use-o manualmente apenas para depurar uma etapa):
 
 1. **Explorar** — `npm run explore -- <url>`. Gera em `output/`:
    `explore_<slug>.json` (inventario: textos, botoes, links, inputs, tabelas, graficos),
